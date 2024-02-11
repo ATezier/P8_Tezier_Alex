@@ -7,14 +7,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -38,6 +31,8 @@ public class TourGuideService {
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
+
+	private int suggsestedAttraction = 5;
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -95,15 +90,17 @@ public class TourGuideService {
 		return visitedLocation;
 	}
 
-	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-		List<Attraction> nearbyAttractions = new ArrayList<>();
+	//Done
+	public SortedMap<Double, Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
+		SortedMap<Double, Attraction> attractions = new TreeMap<>();
+		attractions.comparator();
 		for (Attraction attraction : gpsUtil.getAttractions()) {
-			if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-				nearbyAttractions.add(attraction);
-			}
+			attractions.put(rewardsService.getDistance(visitedLocation.location, attraction), attraction);
 		}
-
-		return nearbyAttractions;
+		while (attractions.size() > suggsestedAttraction) {
+			attractions.remove(attractions.lastKey());
+		}
+		return attractions;
 	}
 
 	private void addShutDownHook() {
