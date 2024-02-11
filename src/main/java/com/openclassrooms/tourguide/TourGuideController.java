@@ -1,19 +1,21 @@
 package com.openclassrooms.tourguide;
 
 import java.util.List;
-
+import java.util.SortedMap;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
-
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 
+import rewardCentral.RewardCentral;
 import tripPricer.Provider;
 
 @RestController
@@ -21,6 +23,9 @@ public class TourGuideController {
 
 	@Autowired
 	TourGuideService tourGuideService;
+
+    @Autowired
+    RewardCentral rewardCentral;
 	
     @RequestMapping("/")
     public String index() {
@@ -42,9 +47,27 @@ public class TourGuideController {
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @RequestMapping("/getNearbyAttractions") 
-    public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
-    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return tourGuideService.getNearByAttractions(visitedLocation);
+    public JSONArray getNearbyAttractions(@RequestParam String userName) throws JSONException {
+        User user = getUser(userName);
+    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(user);
+        SortedMap<Double, Attraction> mappedAttractions = tourGuideService.getNearByAttractions(visitedLocation);
+        Attraction current;
+        JSONArray array = new JSONArray();
+        JSONObject item = new JSONObject();
+        item.put("userLatitude", visitedLocation.location.latitude);
+        item.put("userLongitude", visitedLocation.location.longitude);
+        array.put(item);
+        for(Double distance : mappedAttractions.keySet()) {
+            item = new JSONObject();
+            current = mappedAttractions.get(distance);
+            item.put("name", current.attractionName);
+            item.put("latitude", current.latitude);
+            item.put("longitude", current.longitude);
+            item.put("distance", distance);
+            item.put("rewardPoints", rewardCentral.getAttractionRewardPoints(current.attractionId, user.getUserId()));
+            array.put(item);
+        }
+    	return array;
     }
     
     @RequestMapping("/getRewards") 
