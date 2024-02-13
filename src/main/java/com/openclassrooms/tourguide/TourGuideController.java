@@ -1,7 +1,10 @@
 package com.openclassrooms.tourguide;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
+
+import com.openclassrooms.tourguide.dto.AttractionDto;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,27 +50,26 @@ public class TourGuideController {
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @RequestMapping("/getNearbyAttractions") 
-    public JSONArray getNearbyAttractions(@RequestParam String userName) throws JSONException {
+    public List<AttractionDto> getNearbyAttractions(@RequestParam String userName) throws JSONException {
         User user = getUser(userName);
     	VisitedLocation visitedLocation = tourGuideService.getUserLocation(user);
         SortedMap<Double, Attraction> mappedAttractions = tourGuideService.getNearByAttractions(visitedLocation);
         Attraction current;
-        JSONArray array = new JSONArray();
-        JSONObject item = new JSONObject();
-        item.put("userLatitude", visitedLocation.location.latitude);
-        item.put("userLongitude", visitedLocation.location.longitude);
-        array.put(item);
+        List<AttractionDto> result = new ArrayList<>();
+        AttractionDto currentDto = null;
         for(Double distance : mappedAttractions.keySet()) {
-            item = new JSONObject();
             current = mappedAttractions.get(distance);
-            item.put("name", current.attractionName);
-            item.put("latitude", current.latitude);
-            item.put("longitude", current.longitude);
-            item.put("distance", distance);
-            item.put("rewardPoints", rewardCentral.getAttractionRewardPoints(current.attractionId, user.getUserId()));
-            array.put(item);
+            currentDto = new AttractionDto();
+            currentDto.setName(current.attractionName);
+            currentDto.setAttractionLatitude(current.latitude);
+            currentDto.setAttractionLongitude(current.longitude);
+            currentDto.setUserLatitude(visitedLocation.location.latitude);
+            currentDto.setUserLongitude(visitedLocation.location.longitude);
+            currentDto.setDistance(distance);
+            currentDto.setRewardPoints(rewardCentral.getAttractionRewardPoints(current.attractionId, user.getUserId()));
+            result.add(currentDto);
         }
-    	return array;
+    	return result;
     }
     
     @RequestMapping("/getRewards") 
