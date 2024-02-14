@@ -71,8 +71,10 @@ public class User {
 	}
 	
 	public void addUserReward(UserReward userReward) {
-		if(userRewards.parallelStream().filter(r -> r.attraction.attractionName.equals(userReward.attraction)).count() == 0) {
-			userRewards.add(userReward);
+		synchronized (userRewards) {
+			if (userRewards.parallelStream().noneMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName))) {
+				userRewards.add(userReward);
+			}
 		}
 	}
 	
