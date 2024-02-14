@@ -70,18 +70,6 @@ public class RewardsService {
 				});
 			}, executor);
 		}).collect(Collectors.toList());
-		//System.out.println("longitude: " + userLocations.get(0).location.longitude+ " latitude: " + userLocations.get(0).location.latitude+ " user: " + user.getUserName()+"thread: "+Thread.currentThread().getName());
-
-		if(user.getUserRewards().size()>0) {
-			System.out.println( " user: " + user.getUserName()+"reward:"+user.getUserRewards().get(0).attraction.attractionName);
-		} else {
-			System.out.println( " user: " + user.getUserName()+"reward: no reward");
-		}
-		/*
-		System.out.println("Number of threads: " + ManagementFactory.getThreadMXBean().getThreadCount());
-		System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
-		System.out.println("Number of futures: " + futures.size());
-		*/
 		futures.forEach(CompletableFuture::join);
 	}
 	
@@ -111,4 +99,15 @@ public class RewardsService {
         return statuteMiles;
 	}
 
+	private boolean hasRewardForAttraction(User user, Attraction attraction) {
+		return user.getUserRewards().stream().anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
+	}
+
+	private void processAttraction(User user, VisitedLocation location, Attraction attraction) {
+		synchronized (this) {
+			if (nearAttraction(location, attraction)) {
+				user.addUserReward(new UserReward(location, attraction, getRewardPoints(attraction, user)));
+			}
+		}
+	}
 }
