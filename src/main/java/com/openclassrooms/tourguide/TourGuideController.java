@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import com.openclassrooms.tourguide.dto.AttractionDto;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,7 +21,6 @@ import tripPricer.Provider;
 
 @RestController
 public class TourGuideController {
-
 	@Autowired
 	TourGuideService tourGuideService;
 

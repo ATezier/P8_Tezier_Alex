@@ -8,6 +8,9 @@ import com.openclassrooms.tourguide.user.UserReward;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,6 +28,7 @@ import tripPricer.TripPricer;
 
 @Service
 public class TourGuideService {
+	private final ExecutorService executor = Executors.newFixedThreadPool(60);
 	private Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 	private final GpsUtil gpsUtil;
 	private final RewardsService rewardsService;
@@ -86,8 +90,25 @@ public class TourGuideService {
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
-		rewardsService.calculateRewardsAsync(user);
+		rewardsService.calculateRewards(user);
 		return visitedLocation;
+	}
+
+	public void trackUsersLocation(List<User> users) {
+		List<CompletableFuture> futures = users.stream().map(u -> {
+			return CompletableFuture.runAsync(() -> u.addToVisitedLocations(gpsUtil.getUserLocation(u.getUserId())), executor)
+					.thenRunAsync(() -> rewardsService.calculateRewards(u), executor);
+		}).collect(Collectors.toList());
+		futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+	}
+	public void calculateHighVolumeRewards(List<User> users) {
+		Attraction attraction = gpsUtil.getAttractions().get(0);
+		List<CompletableFuture> futures = users.stream().map(u -> {
+			return CompletableFuture.runAsync(
+							() -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())), executor)
+					.thenRunAsync(() -> rewardsService.calculateRewards(u), executor);
+		}).collect(Collectors.toList());
+		futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 	}
 
 	//Done
