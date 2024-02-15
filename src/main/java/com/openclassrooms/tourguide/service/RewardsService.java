@@ -20,7 +20,6 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 @Service
 public class RewardsService {
-	private final ExecutorService executor = Executors.newCachedThreadPool();
     private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
 
 	// proximity in miles
@@ -57,22 +56,6 @@ public class RewardsService {
 		});
 	}
 
-	public void calculateRewardsAsync(User user) {
-		List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
-		List<Attraction> attractions = gpsUtil.getAttractions();
-
-		List<CompletableFuture> futures = userLocations.parallelStream().map(l -> {
-			return CompletableFuture.runAsync(() -> {
-				attractions.parallelStream().forEach(a -> {
-					if(nearAttraction(l, a)) {
-						user.addUserReward(new UserReward(l, a, getRewardPoints(a, user)));
-					}
-				});
-			}, executor);
-		}).collect(Collectors.toList());
-		futures.forEach(CompletableFuture::join);
-	}
-	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
